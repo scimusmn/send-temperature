@@ -1,6 +1,6 @@
 """Recipes to send computer temperature data to Zabbix"""
 
-from fabric.api import hide, local, settings, task
+from fabric.api import abort, hide, local, settings, task
 from contextlib import contextmanager
 
 
@@ -20,28 +20,31 @@ def _mute():
             yield
 
 
-def get_smc():
-    """Get the path to the smc command
+def which(cmd):
+    """Get the path of a command
     """
-    path = local('which smc', True)
-    return path
+    with _mute():
+        result = local('which ' + cmd, True)
+        if result.failed:
+            return False
+        else:
+            return result
 
 
 @task
 def send():
     """Send temperature data to the Zabbix server
     """
+    smc = which('smc')
+    if smc is False:
+        abort("smc is not installed.")
+
     # Use the smc command line tool to read the TA0P sensor
     # This sensor is the Ambient Air temperature
     # Data is in Celsius
+    temp = local(smc + ' -k TA0P -r')
+    print temp
     # Use sed and perl to parse the value into only the digits
-    print
-    print 'Execute smc'
-    with _mute():
-        smc = get_smc() + ' -l'
-    print smc
-    local(smc)
-    # local('brew install zabbix --agent-only')
 
     # temp="$(smc -k TA0P -r | sed 's/.*bytes \(.*\))/\1/' | sed 's/\([0-9a-fA-F]*\)/0x\1/g' | perl -ne 'chomp; ($low,$high) = split(/ /); print(((hex($low)*256)+hex($high))/4/64);')"
 
