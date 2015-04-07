@@ -2,6 +2,7 @@
 
 from fabric.api import abort, hide, local, settings, task
 from contextlib import contextmanager
+import re
 
 
 def _header(txt):
@@ -42,18 +43,16 @@ def send():
     # Use the smc command line tool to read the TA0P sensor
     # This sensor is the Ambient Air temperature
     # Data is in Celsius
-    temp = local(smc + ' -k TA0P -r')
-    print temp
-    # Use sed and perl to parse the value into only the digits
+    TA0P_output = local(smc + ' -k TA0P -r', True)
 
-    # temp="$(smc -k TA0P -r | sed 's/.*bytes \(.*\))/\1/' | sed 's/\([0-9a-fA-F]*\)/0x\1/g' | perl -ne 'chomp; ($low,$high) = split(/ /); print(((hex($low)*256)+hex($high))/4/64);')"
+    try:
+        regex = re.compile('\] .([0-9.]*) \(')
+        temperature = regex.search(TA0P_output).group(1)
+    except AttributeError:
+        abort('Couldn\'t exctract the temperature from smc\'s output: ' +
+              TA0P_output)
 
-    # echo Ambient air temp = ${temp} C
-    # echo
-
-    # Send the temperature value to Zabbix.
-    # All of the values here are poorly hard coded at this point.
-    # Once we move these into a project, we should make these
-    # configurable variables
-    # zabbix_sender
-    # -c /usr/local/etc/zabbix_agentd.conf -s local-hostname -k TA0P -o ${temp}
+    zabbix_config = '/usr/local/etc/zabbix_agentd.conf'
+    zabbix_hostname = 'bkennedy-mbp'
+    local('zabbix_sender -c ' + zabbix_config + ' -s ' + zabbix_hostname +
+          ' -k TA0P -o ' + temperature)
