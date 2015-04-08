@@ -66,7 +66,8 @@ def send():
               TA0P_output)
 
     zabbix_config = '/usr/local/etc/zabbix_agentd.conf'
-    zabbix_hostname = 'bkennedy-mbp'
+    hostname = local('hostname', True)
+    zabbix_hostname = re.sub('\.local', '', hostname)
     local('zabbix_sender -c ' + zabbix_config + ' -s ' + zabbix_hostname +
           ' -k TA0P -o ' + temperature)
 
