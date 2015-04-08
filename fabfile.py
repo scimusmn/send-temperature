@@ -34,6 +34,18 @@ def which(cmd):
             return result
 
 
+def get_launch_script_path():
+    """Get the path of the launchd script for this process on this system
+    """
+    launch_script = (os.sep + 'Users' + os.sep +
+                     env.user + os.sep +
+                     'Library' + os.sep +
+                     'LaunchAgents' + os.sep +
+                     'org.smm.send-temperature.plist'
+                     )
+    return launch_script
+
+
 @task
 def send():
     """Send temperature data to the Zabbix server
@@ -46,7 +58,6 @@ def send():
     # This sensor is the Ambient Air temperature
     # Data is in Celsius
     TA0P_output = local(smc + ' -k TA0P -r', True)
-
     try:
         regex = re.compile('\] .([0-9.]*) \(')
         temperature = regex.search(TA0P_output).group(1)
@@ -79,12 +90,7 @@ def install():
 
     with open(launchd_template, "r") as sources:
         lines = sources.readlines()
-    launch_script = (os.sep + 'Users' + os.sep +
-                     env.user + os.sep +
-                     'Library' + os.sep +
-                     'LaunchAgents' + os.sep +
-                     'org.smm.send-temperature.plist'
-                     )
+    launch_script = get_launch_script_path()
     with open(launch_script, "w") as sources:
         for line in lines:
             line = re.sub(
@@ -107,3 +113,13 @@ def install():
         local('launchctl unload ' + launch_script)
     time.sleep(3)
     local('launchctl load ' + launch_script)
+
+
+@task
+def uninstall():
+    """Unload and remove the launchd script that keeps this script running
+    """
+    launch_script = get_launch_script_path()
+    with settings(warn_only='true'):
+        local('launchctl unload ' + launch_script)
+        local('rm ' + launch_script)
