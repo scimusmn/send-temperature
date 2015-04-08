@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>org.smm.send-temperature</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>PATH</key>
+      <string>path</string>
+    </dict>
+    <key>ProgramArguments</key>
+    <array>
+      <string>fab</string>
+      <string>send</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardErrorPath</key>
+    <string>/tmp/send_temperature-err.log</string>
+    <key>StandardOutPath</key>
+    <string>/tmp/send_temperature-out.log</string>
+    <key>StartInterval</key>
+    <integer>10</integer>
+    <key>WorkingDirectory</key>
+    <string>send-temperature</string>
+  </dict>
+</plist>
+
+<!-- @@@@LingonWhatStart:fab send@@@@LingonWhatEnd -->

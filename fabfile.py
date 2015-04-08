@@ -1,8 +1,10 @@
 """Recipes to send computer temperature data to Zabbix"""
 
-from fabric.api import abort, hide, local, settings, task
+from fabric.api import abort, hide, env, local, settings, task
 from contextlib import contextmanager
 import re
+import os
+import time
 
 
 def _header(txt):
@@ -56,3 +58,52 @@ def send():
     zabbix_hostname = 'bkennedy-mbp'
     local('zabbix_sender -c ' + zabbix_config + ' -s ' + zabbix_hostname +
           ' -k TA0P -o ' + temperature)
+
+
+@task
+def install():
+    """Install this script on OSX. Use launchd to run script repeatadly
+    """
+    # Get Fabric path
+    fab = which('fab')
+    if fab is False:
+        abort("Something is wrong. I can't find the full path to Fabric.")
+
+    launchd_template = os.path.join(
+        os.path.dirname(__file__),
+        "launchd/org.smm.send-temperature.plist"
+    )
+
+    with _mute():
+        user_path = local('echo $PATH', True)
+
+    with open(launchd_template, "r") as sources:
+        lines = sources.readlines()
+    launch_script = (os.sep + 'Users' + os.sep +
+                     env.user + os.sep +
+                     'Library' + os.sep +
+                     'LaunchAgents' + os.sep +
+                     'org.smm.send-temperature.plist'
+                     )
+    with open(launch_script, "w") as sources:
+        for line in lines:
+            line = re.sub(
+                r'<string>fab</string>',
+                '<string>' + fab + '</string>',
+                line)
+            line = re.sub(
+                r'<string>path</string>',
+                '<string>' + user_path + '</string>',
+                line)
+            line = re.sub(
+                r'<string>send-temperature</string>',
+                '<string>' + os.path.dirname(__file__) + '</string>',
+                line)
+            sources.write(line)
+
+    # Reload the plist, incase it's already been setup.
+    # This makes the process idempotent.
+    with settings(warn_only='true'):
+        local('launchctl unload ' + launch_script)
+    time.sleep(3)
+    local('launchctl load ' + launch_script)
