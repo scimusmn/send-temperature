@@ -19,7 +19,7 @@ Configure your Zabbix server to accept a custom data point.
 1. This script will send that data through using `TA0P` as the key.
 1. Type of information = Numeric (float)
 1. Units = C
-1. All other fields are optional
+1. All other fields are optional.
 
 ### On the host
 Do this on the Mac that you will be monitoring.
