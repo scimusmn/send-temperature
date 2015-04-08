@@ -123,3 +123,5 @@ def uninstall():
     with settings(warn_only='true'):
         local('launchctl unload ' + launch_script)
         local('rm ' + launch_script)
+        local('rm /tmp/send_temperature-err.log')
+        local('rm /tmp/send_temperature-out.log')
